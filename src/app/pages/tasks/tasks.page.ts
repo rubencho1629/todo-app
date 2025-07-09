@@ -1,25 +1,46 @@
-import { Component } from '@angular/core';
-import { TaskService } from '../../domain/services/task.service';
-import { Task } from '../../core/models/task.model';
+import { Component, OnInit } from '@angular/core';
+import { TaskService } from '@domain/services/task.service';
+import { Task } from '@core/models/task.model';
 import { Observable } from 'rxjs';
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-                                  
+import { FormsModule } from '@angular/forms';
+
 @Component({
   selector: 'app-tasks',
+  standalone: true,
   templateUrl: './tasks.page.html',
   styleUrls: ['./tasks.page.scss'],
-  standalone: true,
   imports: [CommonModule, IonicModule, FormsModule],
 })
-export class TasksPage {
+export class TasksPage implements OnInit {
   tasks$: Observable<Task[]>;
+  filteredTasks: Task[] = [];
+
   newTaskTitle = '';
   newTaskCategory = '';
+  selectedCategory = '';
+  categories: string[] = [];
 
   constructor(private taskService: TaskService) {
     this.tasks$ = this.taskService.tasks$;
+  }
+
+  ngOnInit(): void {
+    this.tasks$.subscribe(tasks => {
+      this.updateFilteredTasks(tasks);
+      this.categories = [...new Set(tasks.map(t => t.category))];
+    });
+  }
+
+  updateFilteredTasks(tasks: Task[]) {
+    this.filteredTasks = this.selectedCategory
+      ? tasks.filter(t => t.category === this.selectedCategory)
+      : tasks;
+  }
+
+  onCategoryChange() {
+    this.tasks$.subscribe(tasks => this.updateFilteredTasks(tasks));
   }
 
   addTask() {

@@ -19,7 +19,7 @@
   <!-- Filtro por categoría -->
   <ion-item>
     <ion-label>Filtrar por categoría</ion-label>
-    <ion-select [(ngModel)]="selectedCategory">
+    <ion-select [(ngModel)]="selectedCategory" (ionChange)="onCategoryChange()">
       <ion-select-option value="">Todas</ion-select-option>
       <ion-select-option *ngFor="let category of categories" [value]="category">
         {{ category }}
@@ -29,7 +29,7 @@
 
   <!-- Lista de tareas -->
   <ion-list>
-    <ion-item *ngFor="let task of (tasks$ | async)?.filter(t => !selectedCategory || t.category === selectedCategory)">
+    <ion-item *ngFor="let task of filteredTasks">
       <ion-label>
         <h2 [style.text-decoration]="task.completed ? 'line-through' : 'none'">
           {{ task.title }}

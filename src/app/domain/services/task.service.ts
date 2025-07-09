@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Task } from '../../core/models/task.model';
 import { v4 as uuid } from 'uuid';
-import { LocalStorageService } from '../../infrastructure/storage/local-storage.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,17 +10,15 @@ export class TaskService {
   private tasks = new BehaviorSubject<Task[]>([]);
   tasks$ = this.tasks.asObservable();
 
-  constructor(private localStorage: LocalStorageService) {
-    this.loadTasksFromStorage();
+  constructor() {
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      this.tasks.next(JSON.parse(savedTasks));
+    }
   }
 
-  private async loadTasksFromStorage() {
-    const storedTasks = await this.localStorage.loadTasks();
-    this.tasks.next(storedTasks);
-  }
-
-  private saveToStorage() {
-    this.localStorage.saveTasks(this.tasks.getValue());
+  private saveToLocalStorage(tasks: Task[]) {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
   }
 
   addTask(title: string, category: string) {
@@ -31,9 +28,9 @@ export class TaskService {
       completed: false,
       category,
     };
-    const current = this.tasks.getValue();
-    this.tasks.next([...current, newTask]);
-    this.saveToStorage();
+    const current = [...this.tasks.getValue(), newTask];
+    this.tasks.next(current);
+    this.saveToLocalStorage(current);
   }
 
   toggleTask(id: string) {
@@ -41,13 +38,13 @@ export class TaskService {
       task.id === id ? { ...task, completed: !task.completed } : task
     );
     this.tasks.next(updated);
-    this.saveToStorage();
+    this.saveToLocalStorage(updated);
   }
 
   deleteTask(id: string) {
     const updated = this.tasks.getValue().filter(task => task.id !== id);
     this.tasks.next(updated);
-    this.saveToStorage();
+    this.saveToLocalStorage(updated);
   }
 
   getTasksByCategory(category: string): Task[] {
