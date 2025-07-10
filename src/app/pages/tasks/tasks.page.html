@@ -1,43 +1,49 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>To-Do List</ion-title>
+    <ion-title>To-Do List Pro</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <!-- Inputs para crear tarea -->
   <ion-item>
-    <ion-input [(ngModel)]="newTaskTitle" placeholder="Nueva tarea"></ion-input>
+    <ion-input [(ngModel)]="newTitle" placeholder="Tarea"></ion-input>
   </ion-item>
-
   <ion-item>
-    <ion-input [(ngModel)]="newTaskCategory" placeholder="Categoría"></ion-input>
+    <ion-input [(ngModel)]="newCategory" placeholder="Categoría"></ion-input>
   </ion-item>
-
   <ion-button expand="block" (click)="addTask()">Agregar tarea</ion-button>
 
-  <!-- Filtro por categoría -->
   <ion-item>
-    <ion-label>Filtrar por categoría</ion-label>
+    <ion-label>Filtrar categoría</ion-label>
     <ion-select [(ngModel)]="selectedCategory" (ionChange)="onCategoryChange()">
       <ion-select-option value="">Todas</ion-select-option>
-      <ion-select-option *ngFor="let category of categories" [value]="category">
-        {{ category }}
-      </ion-select-option>
+      <ion-select-option *ngFor="let cat of allCategories" [value]="cat">{{ cat }}</ion-select-option>
     </ion-select>
   </ion-item>
 
-  <!-- Lista de tareas -->
   <ion-list>
     <ion-item *ngFor="let task of filteredTasks">
+      <ion-checkbox slot="start" [checked]="task.completed" (ionChange)="toggle(task)"></ion-checkbox>
       <ion-label>
-        <h2 [style.text-decoration]="task.completed ? 'line-through' : 'none'">
-          {{ task.title }}
-        </h2>
-        <p>{{ task.category }}</p>
+        <div *ngIf="editingTask?.id !== task.id">
+          <h2 [style.text-decoration]="task.completed ? 'line-through' : 'none'">{{ task.title }}</h2>
+          <p>{{ task.category }}</p>
+        </div>
+        <div *ngIf="editingTask">
+          <ion-input [(ngModel)]="editingTask.title!"></ion-input>
+          <ion-input [(ngModel)]="editingTask.category!"></ion-input>
+        </div>
       </ion-label>
-      <ion-checkbox slot="start" [checked]="task.completed" (ionChange)="toggleTask(task.id)"></ion-checkbox>
-      <ion-button color="danger" fill="clear" slot="end" (click)="deleteTask(task.id)">
+      <ion-button fill="clear" slot="end" (click)="edit(task)" *ngIf="editingTask?.id !== task.id">
+        <ion-icon name="create-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" color="success" slot="end" (click)="saveEdit()" *ngIf="editingTask?.id === task.id">
+        <ion-icon name="checkmark-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" color="medium" slot="end" (click)="cancelEdit()" *ngIf="editingTask?.id === task.id">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" color="danger" slot="end" (click)="remove(task)">
         <ion-icon name="trash-outline"></ion-icon>
       </ion-button>
     </ion-item>

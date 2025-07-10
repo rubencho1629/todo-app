@@ -3,55 +3,48 @@ import { BehaviorSubject } from 'rxjs';
 import { Task } from '../../core/models/task.model';
 import { v4 as uuid } from 'uuid';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class TaskService {
   private tasks = new BehaviorSubject<Task[]>([]);
   tasks$ = this.tasks.asObservable();
 
   constructor() {
-    const savedTasks = localStorage.getItem('tasks');
-    if (savedTasks) {
-      this.tasks.next(JSON.parse(savedTasks));
-    }
+    const saved = localStorage.getItem('tasks');
+    if (saved) this.tasks.next(JSON.parse(saved));
   }
 
-  private saveToLocalStorage(tasks: Task[]) {
+  private persist(tasks: Task[]) {
     localStorage.setItem('tasks', JSON.stringify(tasks));
   }
 
   addTask(title: string, category: string) {
-    const newTask: Task = {
-      id: uuid(),
-      title,
-      completed: false,
-      category,
-    };
-    const current = [...this.tasks.getValue(), newTask];
-    this.tasks.next(current);
-    this.saveToLocalStorage(current);
-  }
-
-  toggleTask(id: string) {
-    const updated = this.tasks.getValue().map(task =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    );
+    const task: Task = { id: uuid(), title, category, completed: false };
+    const updated = [...this.tasks.getValue(), task];
     this.tasks.next(updated);
-    this.saveToLocalStorage(updated);
+    this.persist(updated);
   }
 
   deleteTask(id: string) {
-    const updated = this.tasks.getValue().filter(task => task.id !== id);
+    const updated = this.tasks.getValue().filter(t => t.id !== id);
     this.tasks.next(updated);
-    this.saveToLocalStorage(updated);
+    this.persist(updated);
   }
 
-  getTasksByCategory(category: string): Task[] {
-    return this.tasks.getValue().filter(task => task.category === category);
+  toggleTask(id: string) {
+    const updated = this.tasks.getValue().map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
+    );
+    this.tasks.next(updated);
+    this.persist(updated);
   }
-
   getAllTasks(): Task[] {
     return this.tasks.getValue();
+  }
+  updateTask(id: string, title: string, category: string) {
+    const updated = this.tasks.getValue().map(t =>
+      t.id === id ? { ...t, title, category } : t
+    );
+    this.tasks.next(updated);
+    this.persist(updated);
   }
 }

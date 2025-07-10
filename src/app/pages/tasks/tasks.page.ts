@@ -1,61 +1,76 @@
-import { Component, OnInit } from '@angular/core';
-import { TaskService } from '@domain/services/task.service';
-import { Task } from '@core/models/task.model';
-import { Observable } from 'rxjs';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
+import { TaskService } from '../../domain/services/task.service';
+import { Task } from '../../core/models/task.model';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
+  imports: [IonicModule, CommonModule, FormsModule],
   templateUrl: './tasks.page.html',
-  styleUrls: ['./tasks.page.scss'],
-  imports: [CommonModule, IonicModule, FormsModule],
 })
-export class TasksPage implements OnInit {
-  tasks$: Observable<Task[]>;
+export class TasksPage {
+  newTitle = '';
+  newCategory = '';
+  selectedCategory = '';
+  editingTask: Task | null = null;
   filteredTasks: Task[] = [];
 
-  newTaskTitle = '';
-  newTaskCategory = '';
-  selectedCategory = '';
-  categories: string[] = [];
-
   constructor(private taskService: TaskService) {
-    this.tasks$ = this.taskService.tasks$;
-  }
-
-  ngOnInit(): void {
-    this.tasks$.subscribe(tasks => {
-      this.updateFilteredTasks(tasks);
-      this.categories = [...new Set(tasks.map(t => t.category))];
+    this.taskService.tasks$.subscribe(tasks => {
+      this.filteredTasks = this.applyFilter(tasks);
     });
   }
 
-  updateFilteredTasks(tasks: Task[]) {
-    this.filteredTasks = this.selectedCategory
+  get allCategories(): string[] {
+    const all = this.taskService.getAllTasks().map((t: Task) => t.category);
+    return [...new Set<string>(all)];
+  }
+
+  applyFilter(tasks: Task[]): Task[] {
+    return this.selectedCategory
       ? tasks.filter(t => t.category === this.selectedCategory)
       : tasks;
   }
 
   onCategoryChange() {
-    this.tasks$.subscribe(tasks => this.updateFilteredTasks(tasks));
+    this.taskService.tasks$.subscribe(tasks => {
+      this.filteredTasks = this.applyFilter(tasks);
+    });
   }
 
   addTask() {
-    if (this.newTaskTitle.trim() && this.newTaskCategory.trim()) {
-      this.taskService.addTask(this.newTaskTitle, this.newTaskCategory);
-      this.newTaskTitle = '';
-      this.newTaskCategory = '';
-    }
+    if (!this.newTitle.trim() || !this.newCategory.trim()) return;
+    this.taskService.addTask(this.newTitle, this.newCategory);
+    this.newTitle = '';
+    this.newCategory = '';
   }
 
-  toggleTask(id: string) {
-    this.taskService.toggleTask(id);
+  toggle(task: Task) {
+    this.taskService.toggleTask(task.id);
   }
 
-  deleteTask(id: string) {
-    this.taskService.deleteTask(id);
+  remove(task: Task) {
+    this.taskService.deleteTask(task.id);
+  }
+
+  edit(task: Task) {
+    this.editingTask = { ...task };
+  }
+
+  saveEdit() {
+    if (!this.editingTask) return;
+    this.taskService.updateTask(
+      this.editingTask.id,
+      this.editingTask.title,
+      this.editingTask.category
+    );
+    this.editingTask = null;
+  }
+
+  cancelEdit() {
+    this.editingTask = null;
   }
 }
